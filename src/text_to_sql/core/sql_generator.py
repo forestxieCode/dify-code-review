@@ -3,6 +3,7 @@ SQL generation using Language Models.
 
 This module handles the interaction with LLMs to generate
 SQL queries from natural language.
+Supports both OpenAI and DeepSeek (OpenAI-compatible) APIs.
 """
 from typing import Protocol, Optional
 from langchain_openai import ChatOpenAI
@@ -24,13 +25,14 @@ class SQLGenerator(Protocol):
 
 
 class LLMSQLGenerator:
-    """SQL generator using OpenAI's Language Models."""
+    """SQL generator using Language Models (supports OpenAI and DeepSeek)."""
     
     def __init__(
         self,
         model_name: Optional[str] = None,
         temperature: Optional[float] = None,
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None
     ):
         """
         Initialize the SQL generator.
@@ -38,11 +40,13 @@ class LLMSQLGenerator:
         Args:
             model_name: Name of the LLM model to use
             temperature: Temperature for generation
-            api_key: OpenAI API key
+            api_key: API key (DeepSeek or OpenAI)
+            base_url: Base URL for API (for DeepSeek or custom endpoints)
         """
         self.model_name = model_name or config.llm.model_name
         self.temperature = temperature if temperature is not None else config.llm.temperature
         self.api_key = api_key or config.llm.api_key
+        self.base_url = base_url or config.llm.base_url
         
         self._llm: Optional[BaseLanguageModel] = None
         self._prompt: Optional[ChatPromptTemplate] = None
@@ -56,11 +60,19 @@ class LLMSQLGenerator:
             Initialized language model
         """
         if self._llm is None:
-            self._llm = ChatOpenAI(
-                model=self.model_name,
-                temperature=self.temperature,
-                openai_api_key=self.api_key
-            )
+            # Build kwargs for ChatOpenAI
+            llm_kwargs = {
+                "model": self.model_name,
+                "temperature": self.temperature,
+                "openai_api_key": self.api_key
+            }
+            
+            # Add base_url if provided (for DeepSeek or custom endpoints)
+            if self.base_url:
+                llm_kwargs["openai_api_base"] = self.base_url
+                logger.info(f"Using custom API base URL: {self.base_url}")
+            
+            self._llm = ChatOpenAI(**llm_kwargs)
             logger.info(f"LLM initialized: {self.model_name}")
         
         return self._llm

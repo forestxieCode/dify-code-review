@@ -25,10 +25,11 @@ class DatabaseConfig:
 @dataclass(frozen=True)
 class LLMConfig:
     """Language Model configuration settings."""
-    model_name: str = "gpt-3.5-turbo"
+    model_name: str = "deepseek-chat"
     temperature: float = 0.0
     max_tokens: Optional[int] = None
     api_key: Optional[str] = None
+    base_url: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -50,9 +51,10 @@ class Config:
         )
         
         self.llm = LLMConfig(
-            model_name=os.getenv("LLM_MODEL", "gpt-3.5-turbo"),
+            model_name=os.getenv("LLM_MODEL", "deepseek-chat"),
             temperature=float(os.getenv("LLM_TEMPERATURE", "0.0")),
-            api_key=os.getenv("OPENAI_API_KEY")
+            api_key=os.getenv("DEEPSEEK_API_KEY") or os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("DEEPSEEK_BASE_URL")
         )
         
         self.agent = AgentConfig(
