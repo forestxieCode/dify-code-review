@@ -4,9 +4,13 @@
 
 This is an intelligent agent built with LangGraph that converts natural language input to SQL queries and executes them to return results.
 
-> 🎉 **最新更新**: 代码已进行全面重构优化，提升了可读性、可维护性和可扩展性。详见 [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+> 🎉 **最新更新**: 项目已按模块重新组织，结构更清晰！详见 [STRUCTURE.md](./STRUCTURE.md)
 > 
-> 🎉 **Latest Update**: Code has been comprehensively refactored for better readability, maintainability, and extensibility. See [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+> 🎉 **Latest Update**: Project reorganized by modules for better structure! See [STRUCTURE.md](./STRUCTURE.md)
+
+> 📝 **优化历史**: 代码已进行全面重构优化，提升了可读性、可维护性和可扩展性。详见 [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+> 
+> 📝 **Optimization History**: Code has been comprehensively refactored for better readability, maintainability, and extensibility. See [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
 
 ## ✨ 功能特点 / Features
 
