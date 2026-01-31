@@ -14,13 +14,14 @@ This is an intelligent agent built with LangGraph that converts natural language
 
 ## ✨ 功能特点 / Features
 
-- 🤖 **智能 SQL 生成**: 使用 GPT 模型将自然语言转换为 SQL 查询
+- 🤖 **智能 SQL 生成**: 使用 DeepSeek 模型将自然语言转换为 SQL 查询
 - 🔄 **自动执行**: 自动执行生成的 SQL 查询并返回结果
 - 🛡️ **安全防护**: 默认只执行 SELECT 查询，防止数据被误删除或修改
 - 📊 **结构化输出**: 以表格形式展示查询结果
 - 🌐 **中英文支持**: 支持中英文自然语言查询
 - 🔧 **模块化设计**: 清晰的模块分离，易于维护和扩展
 - 📝 **专业日志**: 完整的日志系统，便于调试和监控
+- 🗄️ **Supabase 支持**: 原生支持 Supabase PostgreSQL 数据库
 
 ## 🏗️ 架构 / Architecture
 
@@ -75,6 +76,28 @@ pip install -r requirements.txt
 
 ### 2. 配置环境变量 / Configure Environment Variables
 
+**获取 DeepSeek API 密钥 / Get DeepSeek API Key:**
+
+1. 访问 [DeepSeek Platform](https://platform.deepseek.com/) 并注册账号
+2. 创建 API 密钥
+3. DeepSeek 提供 OpenAI 兼容的 API，价格更实惠
+
+Visit [DeepSeek Platform](https://platform.deepseek.com/) to:
+1. Sign up for an account
+2. Create an API key
+3. DeepSeek provides OpenAI-compatible API with more affordable pricing
+
+**获取 Supabase 数据库 / Get Supabase Database:**
+
+1. 访问 [Supabase](https://supabase.com) 并创建免费项目
+2. 在项目设置中获取数据库连接字符串
+
+Visit [Supabase](https://supabase.com) to:
+1. Create a free project
+2. Get database connection string from project settings
+
+**配置文件 / Configure Files:**
+
 复制 `.env.example` 到 `.env` 并配置你的 API 密钥：
 
 Copy `.env.example` to `.env` and configure your API key:
@@ -86,8 +109,19 @@ cp .env.example .env
 编辑 `.env` 文件 / Edit `.env` file:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
-DATABASE_URL=sqlite:///./sample.db
+# DeepSeek API配置 / DeepSeek API Configuration
+DEEPSEEK_API_KEY=your_deepseek_api_key_here
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-chat
+LLM_TEMPERATURE=0.0
+
+# Supabase数据库配置 / Supabase Database Configuration
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres
+
+# 或使用SQLite进行本地开发 / Or use SQLite for local development
+# DATABASE_URL=sqlite:///./sample.db
 ```
 
 ### 3. 初始化数据库 / Initialize Database
@@ -229,7 +263,10 @@ WHERE p.name LIKE '%笔记本电脑%';
 You can use your own database by modifying `DATABASE_URL` in `.env`:
 
 ```env
-# SQLite
+# Supabase (推荐 / Recommended)
+DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres
+
+# SQLite (本地开发 / Local Development)
 DATABASE_URL=sqlite:///./your_database.db
 
 # PostgreSQL
@@ -238,6 +275,23 @@ DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 # MySQL
 DATABASE_URL=mysql://user:password@localhost:3306/dbname
 ```
+
+### 使用 Supabase / Using Supabase
+
+Supabase 是一个开源的 Firebase 替代品，提供 PostgreSQL 数据库服务：
+
+Supabase is an open-source Firebase alternative that provides PostgreSQL database service:
+
+1. 在 [Supabase](https://supabase.com) 创建项目 / Create a project at [Supabase](https://supabase.com)
+2. 获取数据库连接信息 / Get database connection information:
+   - 访问项目设置 → 数据库 / Go to Project Settings → Database
+   - 复制连接字符串 / Copy the connection string
+3. 在 `.env` 中配置 / Configure in `.env`:
+   ```env
+   DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-REF].supabase.co:5432/postgres
+   SUPABASE_URL=https://[YOUR-PROJECT-REF].supabase.co
+   SUPABASE_KEY=your_supabase_anon_key
+   ```
 
 ## 🛡️ 安全性 / Security
 
@@ -252,12 +306,12 @@ DATABASE_URL=mysql://user:password@localhost:3306/dbname
 ## 🔍 工作原理 / How It Works
 
 1. **获取数据库结构**: 智能体首先获取数据库的表结构和字段信息
-2. **生成 SQL**: 使用 LLM (GPT-3.5) 根据数据库结构和用户问题生成 SQL 查询
+2. **生成 SQL**: 使用 LLM (DeepSeek) 根据数据库结构和用户问题生成 SQL 查询
 3. **执行查询**: 使用 SQLAlchemy 执行生成的 SQL 查询
 4. **格式化结果**: 将查询结果格式化为易读的表格形式
 
 1. **Get Database Schema**: The agent first retrieves the database table structure and field information
-2. **Generate SQL**: Uses LLM (GPT-3.5) to generate SQL queries based on the database schema and user question
+2. **Generate SQL**: Uses LLM (DeepSeek) to generate SQL queries based on the database schema and user question
 3. **Execute Query**: Uses SQLAlchemy to execute the generated SQL query
 4. **Format Results**: Formats query results into a readable table format
 
@@ -265,13 +319,15 @@ DATABASE_URL=mysql://user:password@localhost:3306/dbname
 
 - **LangGraph**: 用于构建智能体工作流
 - **LangChain**: 用于 LLM 集成
-- **OpenAI GPT-3.5**: 用于自然语言理解和 SQL 生成
+- **DeepSeek**: 用于自然语言理解和 SQL 生成（支持 OpenAI 兼容 API）
+- **Supabase**: PostgreSQL 数据库服务（也支持其他数据库）
 - **SQLAlchemy**: 用于数据库操作
 - **Python 3.9+**: 编程语言
 
 - **LangGraph**: For building agent workflows
 - **LangChain**: For LLM integration
-- **OpenAI GPT-3.5**: For natural language understanding and SQL generation
+- **DeepSeek**: For natural language understanding and SQL generation (OpenAI-compatible API)
+- **Supabase**: PostgreSQL database service (also supports other databases)
 - **SQLAlchemy**: For database operations
 - **Python 3.9+**: Programming language
 

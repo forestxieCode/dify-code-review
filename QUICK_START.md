@@ -36,7 +36,7 @@ python demo.py
 ### 4️⃣ 使用交互式CLI (需要API Key) / Use Interactive CLI (API Key Required)
 ```bash
 # 设置环境变量 / Set environment variable
-export OPENAI_API_KEY=your_key_here
+export DEEPSEEK_API_KEY=your_key_here
 
 # 运行CLI / Run CLI
 python cli.py
