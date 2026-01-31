@@ -4,6 +4,10 @@
 
 This is an intelligent agent built with LangGraph that converts natural language input to SQL queries and executes them to return results.
 
+> 🎉 **最新更新**: 代码已进行全面重构优化，提升了可读性、可维护性和可扩展性。详见 [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+> 
+> 🎉 **Latest Update**: Code has been comprehensively refactored for better readability, maintainability, and extensibility. See [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+
 ## ✨ 功能特点 / Features
 
 - 🤖 **智能 SQL 生成**: 使用 GPT 模型将自然语言转换为 SQL 查询
@@ -11,10 +15,14 @@ This is an intelligent agent built with LangGraph that converts natural language
 - 🛡️ **安全防护**: 默认只执行 SELECT 查询，防止数据被误删除或修改
 - 📊 **结构化输出**: 以表格形式展示查询结果
 - 🌐 **中英文支持**: 支持中英文自然语言查询
+- 🔧 **模块化设计**: 清晰的模块分离，易于维护和扩展
+- 📝 **专业日志**: 完整的日志系统，便于调试和监控
 
 ## 🏗️ 架构 / Architecture
 
-项目使用 LangGraph 构建了一个有向无环图 (DAG) 的工作流：
+项目使用 LangGraph 构建了一个有向无环图 (DAG) 的工作流，并采用模块化设计：
+
+The project uses LangGraph to build a DAG workflow with modular design:
 
 ```
 用户输入 → 生成SQL → 执行SQL → 格式化输出
@@ -23,9 +31,20 @@ User Input → Generate SQL → Execute SQL → Format Output
 
 ### 核心组件 / Core Components
 
+**工作流节点 / Workflow Nodes:**
 1. **generate_sql**: 分析数据库结构，使用 LLM 生成 SQL 查询
 2. **execute_sql**: 执行生成的 SQL 查询
 3. **format_output**: 格式化输出结果
+
+**模块架构 / Module Architecture:**
+- `config.py` - 配置管理 / Configuration management
+- `constants.py` - 常量定义 / Constants definition
+- `exceptions.py` - 自定义异常 / Custom exceptions
+- `logger.py` - 日志系统 / Logging system
+- `database.py` - 数据库操作 / Database operations
+- `sql_generator.py` - SQL生成逻辑 / SQL generation logic
+- `formatter.py` - 输出格式化 / Output formatting
+- `text_to_sql_agent.py` - 主要工作流 / Main workflow
 
 ## 📦 安装 / Installation
 
