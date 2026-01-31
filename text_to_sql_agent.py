@@ -6,8 +6,8 @@ import os
 from typing import TypedDict, Annotated, Sequence
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from sqlalchemy import create_engine, text, inspect
 from dotenv import load_dotenv
 

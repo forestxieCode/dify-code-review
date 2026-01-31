@@ -70,6 +70,20 @@ This will create a sample database with:
 
 ## 🚀 使用方法 / Usage
 
+### 快速演示 (无需 API Key) / Quick Demo (No API Key Required)
+
+如果你想先看看系统如何工作，可以运行演示脚本：
+
+If you want to see how the system works first, run the demo script:
+
+```bash
+python demo.py
+```
+
+这将展示智能体的完整工作流程，包括数据库结构获取、SQL 生成和执行。
+
+This will demonstrate the complete agent workflow, including database schema retrieval, SQL generation, and execution.
+
 ### 交互式命令行 / Interactive CLI
 
 ```bash
