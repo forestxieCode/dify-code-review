@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 """
-Interactive CLI for the Text-to-SQL Agent
+Interactive CLI for the Text-to-SQL Agent.
 """
 import sys
 from text_to_sql_agent import run_query
+from constants import (
+    OUTPUT_SEPARATOR,
+    CLI_WELCOME,
+    CLI_GOODBYE,
+    CLI_PROMPT,
+    CLI_EXIT_COMMANDS
+)
 
 
 def main():
-    """Main CLI interface"""
-    print("=" * 80)
-    print("🤖 LangGraph Text-to-SQL 智能体 / LangGraph Text-to-SQL Agent")
-    print("=" * 80)
+    """Main CLI interface."""
+    print(OUTPUT_SEPARATOR)
+    print(CLI_WELCOME)
+    print(OUTPUT_SEPARATOR)
     print("\n提示 / Tips:")
     print("  - 用自然语言描述你想查询的内容")
     print("  - Describe what you want to query in natural language")
@@ -21,17 +28,17 @@ def main():
     print("  - 找出购买了笔记本电脑的用户 / Find users who bought laptops")
     print("  - 统计每个产品的总销量 / Count total sales for each product")
     print("  - 显示价格最高的3个产品 / Show top 3 most expensive products")
-    print("=" * 80)
+    print(OUTPUT_SEPARATOR)
     print()
     
     while True:
         try:
             # Get user input
-            user_input = input("\n💬 请输入你的问题 / Enter your question: ").strip()
+            user_input = input(f"\n{CLI_PROMPT}").strip()
             
             # Check for exit commands
-            if user_input.lower() in ['quit', 'exit', '退出']:
-                print("\n👋 再见! / Goodbye!")
+            if user_input.lower() in CLI_EXIT_COMMANDS:
+                print(f"\n{CLI_GOODBYE}")
                 break
             
             # Skip empty input
@@ -39,13 +46,13 @@ def main():
                 continue
             
             # Run the query
-            print("\n" + "=" * 80)
+            print(f"\n{OUTPUT_SEPARATOR}")
             result = run_query(user_input)
             print(result)
-            print("=" * 80)
+            print(OUTPUT_SEPARATOR)
             
         except KeyboardInterrupt:
-            print("\n\n👋 再见! / Goodbye!")
+            print(f"\n\n{CLI_GOODBYE}")
             break
         except Exception as e:
             print(f"\n❌ 错误 / Error: {str(e)}")

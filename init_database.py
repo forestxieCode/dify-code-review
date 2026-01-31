@@ -1,12 +1,13 @@
 """
-Initialize sample database for testing the text-to-SQL agent
+Initialize sample database for testing the text-to-SQL agent.
 """
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime, timezone
-import os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sample.db")
+from config import config
+
+DATABASE_URL = config.database.url
 
 Base = declarative_base()
 
@@ -56,7 +57,7 @@ class Order(Base):
 
 
 def init_database():
-    """Initialize database with sample data"""
+    """Initialize database with sample data."""
     print("Creating database...")
     engine = create_engine(DATABASE_URL)
     

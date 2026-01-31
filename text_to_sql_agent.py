@@ -1,168 +1,159 @@
 """
 LangGraph-based Text-to-SQL Agent
+
 This agent converts natural language questions to SQL queries and executes them.
+Refactored for better code readability, maintainability, and extensibility.
 """
-import os
-from typing import TypedDict, Annotated, Sequence
+from typing import TypedDict, Sequence, Optional
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from sqlalchemy import create_engine, text, inspect
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
-
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sample.db")
-engine = create_engine(DATABASE_URL)
+from database import db_manager
+from sql_generator import create_sql_generator
+from formatter import OutputFormatter
+from logger import logger
+from constants import (
+    MSG_GENERATING_SQL,
+    MSG_EXECUTING_SQL,
+    MSG_FORMATTING_OUTPUT,
+    MSG_QUERY_SUCCESS,
+    MSG_QUERY_NO_RESULTS,
+    MSG_ERROR_PREFIX
+)
+from exceptions import SQLGenerationError, SQLExecutionError
 
 
 class AgentState(TypedDict):
-    """State for the agent graph"""
+    """
+    State for the agent graph.
+    
+    Attributes:
+        user_input: The user's natural language question
+        database_schema: Database schema information
+        sql_query: Generated SQL query
+        query_results: Query execution results as list of dicts (List[Dict[str, Any]])
+        error: Error message if any error occurred
+        messages: Message history for conversation
+        final_output: Formatted final output
+    """
     user_input: str
     database_schema: str
     sql_query: str
-    query_result: str
+    query_results: list  # List[Dict[str, Any]]
     error: str
     messages: Sequence[HumanMessage | AIMessage | SystemMessage]
-
-
-def get_database_schema() -> str:
-    """Get the database schema information"""
-    inspector = inspect(engine)
-    schema_info = []
-    
-    for table_name in inspector.get_table_names():
-        schema_info.append(f"\nTable: {table_name}")
-        columns = inspector.get_columns(table_name)
-        for column in columns:
-            schema_info.append(f"  - {column['name']}: {column['type']}")
-    
-    return "\n".join(schema_info)
+    final_output: str
 
 
 def generate_sql(state: AgentState) -> AgentState:
-    """Node: Generate SQL from natural language"""
-    print("🤖 Generating SQL query...")
+    """
+    Node: Generate SQL from natural language.
     
-    # Get database schema
-    schema = get_database_schema()
-    state["database_schema"] = schema
-    
-    # Create LLM
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        openai_api_key=os.getenv("OPENAI_API_KEY")
-    )
-    
-    # Create prompt
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a SQL expert. Given a database schema and a user question, 
-generate a valid SQL query to answer the question.
-
-Database Schema:
-{schema}
-
-Rules:
-1. Generate ONLY the SQL query, no explanations
-2. Use proper SQL syntax
-3. Make sure the query is safe (no DROP, DELETE, or UPDATE unless explicitly requested)
-4. Return only SELECT queries unless the user explicitly requests modifications
-"""),
-        ("human", "{question}")
-    ])
-    
-    # Generate SQL
-    try:
-        chain = prompt | llm
-        response = chain.invoke({
-            "schema": schema,
-            "question": state["user_input"]
-        })
+    Args:
+        state: Current agent state
         
-        sql_query = response.content.strip()
-        # Remove markdown code blocks if present
-        if sql_query.startswith("```sql"):
-            sql_query = sql_query[6:]
-        if sql_query.startswith("```"):
-            sql_query = sql_query[3:]
-        if sql_query.endswith("```"):
-            sql_query = sql_query[:-3]
-        sql_query = sql_query.strip()
+    Returns:
+        Updated agent state with generated SQL
+    """
+    logger.info(MSG_GENERATING_SQL)
+    
+    try:
+        # Get database schema
+        schema = db_manager.get_schema()
+        state["database_schema"] = schema
+        
+        # Create SQL generator
+        sql_gen = create_sql_generator()
+        
+        # Generate SQL query
+        sql_query = sql_gen.generate(
+            question=state["user_input"],
+            schema=schema
+        )
         
         state["sql_query"] = sql_query
         state["error"] = ""
-        print(f"📝 Generated SQL: {sql_query}")
+        logger.info(f"Generated SQL: {sql_query}")
         
+    except SQLGenerationError as e:
+        error_msg = f"{MSG_ERROR_PREFIX}{str(e)}"
+        state["error"] = str(e)
+        logger.error(error_msg)
     except Exception as e:
-        state["error"] = f"Error generating SQL: {str(e)}"
-        print(f"❌ {state['error']}")
+        error_msg = f"{MSG_ERROR_PREFIX}Unexpected error: {str(e)}"
+        state["error"] = str(e)
+        logger.exception("Unexpected error during SQL generation")
     
     return state
 
 
 def execute_sql(state: AgentState) -> AgentState:
-    """Node: Execute the SQL query"""
-    print("🔄 Executing SQL query...")
+    """
+    Node: Execute the SQL query.
     
+    Args:
+        state: Current agent state
+        
+    Returns:
+        Updated agent state with query results
+    """
+    logger.info(MSG_EXECUTING_SQL)
+    
+    # Skip execution if there was an error in previous step
     if state.get("error"):
         return state
     
     try:
-        with engine.connect() as conn:
-            result = conn.execute(text(state["sql_query"]))
-            rows = result.fetchall()
+        # Execute query using database manager
+        results = db_manager.execute_query(state["sql_query"])
+        
+        state["query_results"] = results
+        
+        if results:
+            msg = MSG_QUERY_SUCCESS.format(count=len(results))
+            logger.info(msg)
+        else:
+            logger.info(MSG_QUERY_NO_RESULTS)
             
-            if rows:
-                # Format results as a table
-                columns = result.keys()
-                result_lines = ["\t".join(columns)]
-                for row in rows:
-                    result_lines.append("\t".join(str(val) for val in row))
-                state["query_result"] = "\n".join(result_lines)
-                print(f"✅ Query executed successfully. Found {len(rows)} rows.")
-            else:
-                state["query_result"] = "Query executed successfully. No results returned."
-                print("✅ Query executed successfully. No results.")
-                
-    except Exception as e:
-        state["error"] = f"Error executing SQL: {str(e)}"
-        state["query_result"] = ""
-        print(f"❌ {state['error']}")
+    except (SQLExecutionError, Exception) as e:
+        error_msg = f"{MSG_ERROR_PREFIX}{str(e)}"
+        state["error"] = str(e)
+        state["query_results"] = []
+        logger.error(error_msg)
     
     return state
 
 
 def format_output(state: AgentState) -> AgentState:
-    """Node: Format the final output"""
-    print("📋 Formatting output...")
+    """
+    Node: Format the final output.
     
-    if state.get("error"):
-        output = f"""
-错误 / Error:
-{state['error']}
-"""
-    else:
-        output = f"""
-用户问题 / User Question:
-{state['user_input']}
-
-生成的SQL / Generated SQL:
-{state['sql_query']}
-
-查询结果 / Query Results:
-{state['query_result']}
-"""
+    Args:
+        state: Current agent state
+        
+    Returns:
+        Updated agent state with formatted output
+    """
+    logger.info(MSG_FORMATTING_OUTPUT)
+    
+    output = OutputFormatter.format_query_output(
+        user_input=state["user_input"],
+        sql_query=state.get("sql_query", ""),
+        results=state.get("query_results", []),
+        error=state.get("error")
+    )
     
     state["final_output"] = output
     return state
 
 
-def create_text_to_sql_agent():
-    """Create the LangGraph agent"""
+def create_text_to_sql_agent() -> StateGraph:
+    """
+    Create the LangGraph agent workflow.
+    
+    Returns:
+        Compiled LangGraph workflow
+    """
     # Create the graph
     workflow = StateGraph(AgentState)
     
@@ -180,21 +171,33 @@ def create_text_to_sql_agent():
     # Compile the graph
     app = workflow.compile()
     
+    logger.debug("LangGraph workflow created successfully")
     return app
 
 
 def run_query(user_input: str) -> str:
-    """Run a text-to-SQL query"""
+    """
+    Run a text-to-SQL query.
+    
+    Args:
+        user_input: Natural language question from user
+        
+    Returns:
+        Formatted output string with results
+    """
+    logger.info(f"Running query: {user_input}")
+    
     agent = create_text_to_sql_agent()
     
     # Initial state
-    initial_state = {
+    initial_state: AgentState = {
         "user_input": user_input,
         "database_schema": "",
         "sql_query": "",
-        "query_result": "",
+        "query_results": [],
         "error": "",
-        "messages": []
+        "messages": [],
+        "final_output": ""
     }
     
     # Run the agent
@@ -205,10 +208,12 @@ def run_query(user_input: str) -> str:
 
 if __name__ == "__main__":
     # Example usage
-    print("=" * 60)
+    from constants import OUTPUT_SEPARATOR
+    
+    print(OUTPUT_SEPARATOR)
     print("欢迎使用 LangGraph Text-to-SQL 智能体")
     print("Welcome to LangGraph Text-to-SQL Agent")
-    print("=" * 60)
+    print(OUTPUT_SEPARATOR)
     
     # Test query
     test_question = "显示所有用户的信息 / Show all users"

@@ -1,12 +1,13 @@
 """
-Visualize the LangGraph workflow
+Visualize the LangGraph workflow.
 """
 from langgraph.graph import StateGraph, END
 from text_to_sql_agent import AgentState, generate_sql, execute_sql, format_output
+from constants import OUTPUT_SEPARATOR, OUTPUT_SUBSEPARATOR
 
 
 def visualize_workflow():
-    """Create and display the workflow graph"""
+    """Create and display the workflow graph."""
     # Create the graph
     workflow = StateGraph(AgentState)
     
@@ -25,7 +26,7 @@ def visualize_workflow():
     app = workflow.compile()
     
     print("LangGraph Workflow Structure:")
-    print("=" * 60)
+    print(OUTPUT_SEPARATOR)
     print()
     print("  ┌─────────────────┐")
     print("  │   User Input    │")
@@ -54,7 +55,7 @@ def visualize_workflow():
     print("  │  Final Result   │")
     print("  └─────────────────┘")
     print()
-    print("=" * 60)
+    print(OUTPUT_SEPARATOR)
     print("\nWorkflow compiled successfully!")
     print(f"Number of nodes: {len(app.nodes)}")
     
