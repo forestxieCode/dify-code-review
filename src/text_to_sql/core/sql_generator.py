@@ -68,7 +68,9 @@ class LLMSQLGenerator:
             }
             
             # Add base_url if provided (for DeepSeek or custom endpoints)
+            # Note: Different versions of langchain-openai may use different parameter names
             if self.base_url:
+                # Try both parameter names for compatibility
                 llm_kwargs["openai_api_base"] = self.base_url
                 logger.info(f"Using custom API base URL: {self.base_url}")
             

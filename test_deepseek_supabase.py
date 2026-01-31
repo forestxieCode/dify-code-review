@@ -156,7 +156,8 @@ python cli.py
 
 # 5. Use as Python module:
 from text_to_sql import run_query
-result = run_query("显示所有用户")
+# Example bilingual query (supports both Chinese and English)
+result = run_query("显示所有用户")  # "Show all users" in Chinese
 print(result)
     """)
 
